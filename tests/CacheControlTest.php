@@ -46,4 +46,36 @@ class CacheControlTest extends TestCase
 
         $this->assertSame('immutable', $cacheControl->forPath('/assets/app.js'));
     }
+
+    public function test_missing_keys_fall_back_to_package_defaults_via_config(): void
+    {
+        config()->set('vite-s3.cache_control', ['immutable' => 'custom-immutable']);
+
+        $cacheControl = CacheControl::fromConfig();
+
+        // Overridden key is used.
+        $this->assertSame('custom-immutable', $cacheControl->forPath('assets/app.js'));
+        // Missing keys fall back to the package defaults.
+        $this->assertSame('public, max-age=300', $cacheControl->forPath('manifest.json'));
+    }
+
+    public function test_missing_immutable_directories_falls_back_to_assets(): void
+    {
+        config()->set('vite-s3.cache_control', ['immutable' => 'custom-immutable']);
+
+        $cacheControl = CacheControl::fromConfig();
+
+        $this->assertSame('custom-immutable', $cacheControl->forPath('assets/nested/deep/file.js'));
+        $this->assertSame('public, max-age=300', $cacheControl->forPath('css/app.css'));
+    }
+
+    public function test_false_in_config_disables_headers_via_config(): void
+    {
+        config()->set('vite-s3.cache_control', false);
+
+        $cacheControl = CacheControl::fromConfig();
+
+        $this->assertNull($cacheControl->forPath('assets/app.js'));
+        $this->assertSame([], $cacheControl->optionsFor('assets/app.js'));
+    }
 }

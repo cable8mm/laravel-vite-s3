@@ -9,6 +9,17 @@ namespace Cable8mm\LaravelViteS3;
 final class CacheControl
 {
     /**
+     * Package defaults, merged per key when the published config is missing values.
+     *
+     * @var array<string, mixed>
+     */
+    private const DEFAULTS = [
+        'immutable_directories' => ['assets'],
+        'immutable' => 'public, max-age=31536000, immutable',
+        'default' => 'public, max-age=300',
+    ];
+
+    /**
      * @param  array<string, mixed>|false  $config  The `vite-s3.cache_control` config value.
      *                                              Pass `false` to disable headers entirely.
      */
@@ -16,12 +27,24 @@ final class CacheControl
 
     /**
      * Create an instance from the package configuration.
+     *
+     * Missing keys fall back to the package defaults, so a published config
+     * with only some keys still produces sensible headers. Set the config
+     * value to `false` to disable the Cache-Control header entirely.
      */
     public static function fromConfig(): self
     {
-        $config = config('vite-s3.cache_control', []);
+        $config = config('vite-s3.cache_control', self::DEFAULTS);
 
-        return new self(is_array($config) ? $config : ($config === false ? false : []));
+        if ($config === false) {
+            return new self(false);
+        }
+
+        if (! is_array($config)) {
+            return new self(self::DEFAULTS);
+        }
+
+        return new self(array_merge(self::DEFAULTS, $config));
     }
 
     /**

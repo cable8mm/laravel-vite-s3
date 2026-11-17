@@ -109,7 +109,9 @@ class CopyViteBuildTest extends TestCase
         Storage::disk('build')->put('assets/app-A1b2C3d4.js', 'console.log(1);');
         Storage::disk('s3')->put('build/assets/stale.js', 'stale');
 
+        // In dry-run mode the final message must say "would be deleted", not "deleted".
         $this->artisan('s3:copy-vite-build', ['--delete' => true, '--dry-run' => true])
+            ->expectsOutputToContain('stale files would be deleted')
             ->assertExitCode(0);
 
         Storage::disk('s3')->assertExists('build/assets/stale.js');

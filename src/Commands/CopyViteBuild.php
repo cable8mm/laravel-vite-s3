@@ -78,21 +78,24 @@ final class CopyViteBuild extends Command
             }
         }
 
+        $wouldBe = $this->option('dry-run');
+        $copiedWord = $wouldBe ? 'files would be copied' : 'files copied';
+        $deleteWord = $wouldBe ? 'stale files would be deleted' : 'stale files deleted';
+        $tail = $this->option('delete') ? ", {$deleted} {$deleteWord}" : '';
+
         if ($failed > 0) {
-            $this->error("Done with errors. {$copied} copied, {$deleted} deleted, {$failed} failed.");
+            $this->error("Done with errors. {$copied} {$copiedWord}{$tail}, {$failed} failed.");
 
             return self::FAILURE;
         }
 
-        $tail = $this->option('delete') ? ", {$deleted} stale files deleted" : '';
-
-        if ($this->option('dry-run')) {
-            $this->info("Dry run. {$copied} files would be copied{$tail}.");
+        if ($wouldBe) {
+            $this->info("Dry run. {$copied} {$copiedWord}{$tail}.");
 
             return self::SUCCESS;
         }
 
-        $this->info("Done. {$copied} files copied{$tail}.");
+        $this->info("Done. {$copied} {$copiedWord}{$tail}.");
 
         return self::SUCCESS;
     }
@@ -105,9 +108,15 @@ final class CopyViteBuild extends Command
      */
     private function deleteStaleFiles(array $sourceFiles, FilesystemAdapter $targetDisk, string $targetPath): int
     {
-        $prefix = $targetPath === '' ? '' : $targetPath.'/';
+        if ($targetPath === '') {
+            // Defense in depth: the CLI already refuses --delete with an empty
+            // target path. Never let this method scan (and empty) the whole disk.
+            throw new \RuntimeException('Refusing to delete stale files with an empty target path.');
+        }
+
+        $prefix = $targetPath.'/';
         $expected = array_map(fn (string $file): string => $prefix.$file, $sourceFiles);
-        $existing = $targetDisk->allFiles($targetPath === '' ? null : $targetPath);
+        $existing = $targetDisk->allFiles($targetPath);
         $stale = array_diff($existing, $expected);
 
         foreach ($stale as $path) {
