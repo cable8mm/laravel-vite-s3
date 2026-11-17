@@ -1,0 +1,11 @@
+name: update-changelog
+
+on:
+    release:
+        types: [published]
+
+jobs:
+    changelog:
+        uses: replworks/.github/.github/workflows/update-changelog.yml@v1
+        permissions:
+            contents: write
