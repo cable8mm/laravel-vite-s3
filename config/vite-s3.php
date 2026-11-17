@@ -57,7 +57,8 @@ return [
     | Files whose first path segment is listed in "immutable_directories"
     | receive the "immutable" header. All other files receive "default".
     |
-    | Set 'cache_control' to false to skip the Cache-Control header entirely.
+    | Any missing key falls back to the package default. Set 'cache_control'
+    | to false to skip the Cache-Control header entirely.
     |
     */
     'cache_control' => [

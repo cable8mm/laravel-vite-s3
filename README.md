@@ -84,6 +84,21 @@ return [
 ];
 ```
 
+### Public read access for CDN-served assets
+
+Files are uploaded with the credentials configured for your `s3` disk. If the objects are not publicly readable, the CDN (or the browser) returns `AccessDenied` (403). Make sure one of the following is in place:
+
+```php
+// config/filesystems.php
+'s3' => [
+    'driver' => 's3',
+    // ...
+    'visibility' => 'public', // uploads with a public-read ACL
+],
+```
+
+or grant public read access at the bucket level, or serve the bucket through a CDN distribution with an Origin Access Control (OAC). The package does not change the default visibility of your disk.
+
 ## Usage
 
 After `vite build`, run:
@@ -130,7 +145,7 @@ Everything else — typically `manifest.json` — changes on every deployment an
 Cache-Control: public, max-age=300
 ```
 
-The mapping is configured through `cache_control.immutable_directories` (first path segments) and the `immutable`/`default` values. Set `'cache_control' => false` to disable setting the header entirely.
+The mapping is configured through `cache_control.immutable_directories` (first path segments) and the `immutable`/`default` values. Any missing key falls back to the package default. Set `'cache_control' => false` to disable setting the header entirely.
 
 Content types are detected automatically by the S3 adapter from the file contents.
 
